@@ -1,0 +1,79 @@
+provider "aws" {
+  region = "us-west-2"
+}
+
+# Create an IAM role
+resource "aws_iam_role" "example" {
+  name = "example"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+# Create a VPC
+resource "aws_vpc" "example" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "example"
+  }
+}
+
+# Create public subnets
+resource "aws_subnet" "public_subnet_1" {
+    vpc_id = aws_vpc.example.id
+    cidr_block = "10.0.1.0/24"
+    availability_zone = "us-west-2a"
+    map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "public_subnet_2" {
+    vpc_id = aws_vpc.example.id
+    cidr_block = "10.0.2.0/24"
+    availability_zone = "us-west-2b"
+    map_public_ip_on_launch = true
+}
+
+# Create private subnets
+resource "aws_subnet" "private_subnet_1" {
+    vpc_id = aws_vpc.example.id
+    cidr_block = "10.0.3.0/24"
+    availability_zone = "us-west-2a"
+    map_public_ip_on_launch = false
+}
+
+resource "aws_subnet" "private_subnet_2" {
+    vpc_id = aws_vpc.example.id
+    cidr_block = "10.0.4.0/24"
+    availability_zone = "us-west-2b"
+    map_public_ip_on_launch = false
+}
+
+# Create a subnet group
+resource "aws_db_subnet_group" "example" {
+  name        = "example"
+  subnet_ids = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id, aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+}
+
+# Create an RDS instance
+resource "aws_db_instance" "example" {
+  allocated_storage    = 20
+  storage_type         = "gp2"
+  engine               = "postgres"
+  engine_version       = "12.3"
+  instance_class       = "db.t2.micro"
+  name                 = "example"
+  username             = "example"
+ 
